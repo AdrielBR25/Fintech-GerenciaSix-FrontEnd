@@ -1,0 +1,201 @@
+.form-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.form-box {
+  background: rgba(10, 10, 10, 0.95);
+  border: 2px solid #666666;
+  border-radius: 20px;
+  padding: 35px 40px;
+  max-width: 600px;
+  width: 100%;
+  box-shadow: 0 10px 40px rgba(102, 102, 102, 0.3);
+}
+
+.main-title {
+  font-size: 1.6rem;
+  font-weight: bold;
+  text-align: center;
+  color: #fff;
+  margin-bottom: 8px;
+  letter-spacing: 2px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.subtitle {
+  font-size: 1.4rem;
+  font-weight: bold;
+  text-align: center;
+  color: #888888;
+  margin-bottom: 15px;
+  letter-spacing: 3px;
+}
+
+.description {
+  font-size: 0.9rem;
+  text-align: center;
+  color: #ccc;
+  margin-bottom: 25px;
+  letter-spacing: 1px;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #fff;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.form-group input {
+  padding: 12px 16px;
+  border: 2px solid #333333;
+  border-radius: 10px;
+  background: rgba(26, 26, 26, 0.6);
+  color: #fff;
+  font-size: 1rem;
+}
+
+.form-group input::placeholder {
+  color: #888;
+}
+
+.error-message {
+  background: rgba(220, 53, 69, 0.2);
+  border: 1px solid #dc3545;
+  color: #ff6b6b;
+  padding: 10px;
+  border-radius: 10px;
+  text-align: center;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+  animation: shake 0.5s;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-10px); }
+  75% { transform: translateX(10px); }
+}
+
+.submit-button {
+  padding: 14px 32px;
+  background: linear-gradient(135deg, #666666 0%, #333333 100%);
+  border: 2px solid #666666;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1.05rem;
+  font-weight: bold;
+  cursor: pointer;
+  margin-top: 5px;
+  letter-spacing: 1px;
+}
+
+.submit-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Success Screen */
+.success-box {
+  background: rgba(10, 10, 10, 0.95);
+  border: 2px solid #666666;
+  border-radius: 20px;
+  padding: 40px 40px;
+  max-width: 600px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 40px rgba(102, 102, 102, 0.3);
+}
+
+.success-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, #666666 0%, #333333 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  color: #fff;
+  margin: 0 auto 25px;
+  box-shadow: 0 0 30px rgba(102, 102, 102, 0.6);
+}
+
+.success-box h1 {
+  font-size: 2rem;
+  color: #fff;
+  margin-bottom: 18px;
+  text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.success-message {
+  font-size: 1rem;
+  color: #ccc;
+  margin-bottom: 25px;
+  line-height: 1.5;
+}
+
+.whatsapp-button {
+  display: inline-block;
+  padding: 14px 36px;
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: bold;
+  margin-bottom: 18px;
+  transition: all 0.3s ease;
+}
+
+.whatsapp-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(37, 211, 102, 0.4);
+}
+
+.back-button {
+  display: block;
+  width: 100%;
+  padding: 14px;
+  background: transparent;
+  border: 2px solid #666666;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  margin-top: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .form-box, .success-box {
+    padding: 30px 20px;
+  }
+
+  .main-title {
+    font-size: 1.5rem;
+  }
+
+  .subtitle {
+    font-size: 1.3rem;
+  }
+
+  .description {
+    font-size: 0.85rem;
+  }
+}
+
