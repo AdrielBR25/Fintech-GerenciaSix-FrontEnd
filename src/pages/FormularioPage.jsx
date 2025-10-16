@@ -158,7 +158,7 @@ function FormularioPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="telefone">Telefone:</label>
+            <label htmlFor="telefone">Telefone (WhatsApp):</label>
             <input
               type="tel"
               id="telefone"
