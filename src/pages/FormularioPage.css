@@ -84,6 +84,30 @@
   margin-bottom: 15px;
   font-size: 0.95rem;
   animation: shake 0.5s;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.contact-manager-button {
+  display: inline-block;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+  color: #fff;
+  text-decoration: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  transition: all 0.3s ease;
+  margin: 8px auto 0;
+  width: fit-content;
+  max-width: 200px;
+  align-self: center;
+}
+
+.contact-manager-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(37, 211, 102, 0.4);
 }
 
 @keyframes shake {

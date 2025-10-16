@@ -7,6 +7,7 @@ import './AdminDashboard.css';
 function AdminDashboard() {
   const [formularios, setFormularios] = useState([]);
   const [admins, setAdmins] = useState([]);
+  const [afiliados, setAfiliados] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('formularios');
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
@@ -26,6 +27,11 @@ function AdminDashboard() {
   const [formData, setFormData] = useState({ nome: '', email: '', cpf: '', telefone: '', senha: '' });
   const [importMode, setImportMode] = useState('manual'); // 'manual' ou 'import'
   const [importText, setImportText] = useState('');
+  // Estados para afiliados
+  const [showAfiliadoModal, setShowAfiliadoModal] = useState(false);
+  const [afiliadoNome, setAfiliadoNome] = useState('');
+  const [showAfiliadoFormsModal, setShowAfiliadoFormsModal] = useState(false);
+  const [afiliadoFormsData, setAfiliadoFormsData] = useState({ nome: '', formularios: [] });
   const navigate = useNavigate();
 
   const getAuthHeaders = () => {
@@ -54,6 +60,15 @@ function AdminDashboard() {
     }
   };
 
+  const fetchAfiliados = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/afiliado`, getAuthHeaders());
+      setAfiliados(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar afiliados:', error);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
@@ -62,15 +77,16 @@ function AdminDashboard() {
     }
 
     const loadData = async () => {
-      await Promise.all([fetchFormularios(), fetchAdmins()]);
+      await Promise.all([fetchFormularios(), fetchAdmins(), fetchAfiliados()]);
       setLoading(false);
     };
 
     loadData();
 
-    // Atualizar formulários a cada 5 segundos
+    // Atualizar formulários e afiliados a cada 5 segundos
     const interval = setInterval(() => {
       fetchFormularios();
+      fetchAfiliados();
     }, 5000);
 
     return () => clearInterval(interval);
@@ -182,6 +198,76 @@ function AdminDashboard() {
     } catch (error) {
       showMessage('error', 'Erro ao deletar administrador');
     }
+  };
+
+  // Funções para afiliados
+  const openAfiliadoModal = () => {
+    setAfiliadoNome('');
+    setShowAfiliadoModal(true);
+  };
+
+  const closeAfiliadoModal = () => {
+    setAfiliadoNome('');
+    setShowAfiliadoModal(false);
+  };
+
+  const createAfiliado = async (e) => {
+    e.preventDefault();
+    
+    if (!afiliadoNome.trim()) {
+      showMessage('error', 'Digite o nome do afiliado');
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/afiliado`, { nome: afiliadoNome }, getAuthHeaders());
+      
+      await fetchAfiliados();
+      closeAfiliadoModal();
+      showMessage('success', 'Afiliado criado com sucesso!');
+    } catch (error) {
+      showMessage('error', error.response?.data?.message || 'Erro ao criar afiliado');
+    }
+  };
+
+  const deleteAfiliado = async (id) => {
+    if (!window.confirm('Tem certeza que deseja deletar este afiliado? Os formulários associados não serão deletados.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/afiliado/${id}`, getAuthHeaders());
+      
+      await fetchAfiliados();
+      showMessage('success', 'Afiliado deletado com sucesso!');
+    } catch (error) {
+      showMessage('error', 'Erro ao deletar afiliado');
+    }
+  };
+
+  const viewAfiliadoForms = async (afiliado) => {
+    try {
+      const response = await axios.get(`${API_URL}/afiliado/${afiliado._id}/formularios`, getAuthHeaders());
+      setAfiliadoFormsData({
+        nome: afiliado.nome,
+        codigo: afiliado.codigo,
+        formularios: response.data
+      });
+      setShowAfiliadoFormsModal(true);
+    } catch (error) {
+      showMessage('error', 'Erro ao buscar formulários do afiliado');
+      console.error('Erro:', error);
+    }
+  };
+
+  const closeAfiliadoFormsModal = () => {
+    setShowAfiliadoFormsModal(false);
+    setAfiliadoFormsData({ nome: '', codigo: '', formularios: [] });
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text);
+    showMessage('success', 'Link copiado!');
   };
 
   const showMessage = (type, text) => {
@@ -445,6 +531,12 @@ function AdminDashboard() {
           onClick={() => setActiveTab('formularios')}
         >
           Formulários ({formularios.length})
+        </button>
+        <button
+          className={`tab ${activeTab === 'afiliados' ? 'active' : ''}`}
+          onClick={() => setActiveTab('afiliados')}
+        >
+          Afiliados ({afiliados.length})
         </button>
         <button
           className={`tab ${activeTab === 'admins' ? 'active' : ''}`}
@@ -723,7 +815,159 @@ function AdminDashboard() {
             </div>
           </div>
         )}
+
+        {activeTab === 'afiliados' && (
+          <div className="afiliados-section">
+            <div className="section-header">
+              <h2>Gerenciar Afiliados</h2>
+              <button onClick={openAfiliadoModal} className="create-form-button">
+                + Novo Afiliado
+              </button>
+            </div>
+
+            {afiliados.length === 0 ? (
+              <div className="empty-state">
+                <p>Nenhum afiliado cadastrado ainda</p>
+                <p className="empty-subtitle">Crie seu primeiro afiliado para gerar links personalizados</p>
+              </div>
+            ) : (
+              <div className="afiliados-grid">
+                {afiliados.map((afiliado) => (
+                  <div key={afiliado._id} className="afiliado-card">
+                    <div className="afiliado-header">
+                      <div className="afiliado-info">
+                        <h3>{afiliado.nome}</h3>
+                        <p className="afiliado-date">Criado em: {formatDate(afiliado.createdAt)}</p>
+                      </div>
+                    </div>
+
+                    <div className="afiliado-stats">
+                      <div className="stat-item">
+                        <span className="stat-label">Código:</span>
+                        <span className="stat-value codigo">{afiliado.codigo}</span>
+                      </div>
+                      <div className="stat-item">
+                        <span className="stat-label">Formulários:</span>
+                        <span className="stat-value">{afiliado.totalFormularios || 0}</span>
+                      </div>
+                    </div>
+
+                    <div className="afiliado-link">
+                      <label>Link do Afiliado:</label>
+                      <div className="link-container">
+                        <input
+                          type="text"
+                          value={`${window.location.origin}/?ref=${afiliado.codigo}`}
+                          readOnly
+                          className="link-input"
+                        />
+                        <button
+                          onClick={() => copyToClipboard(`${window.location.origin}/?ref=${afiliado.codigo}`)}
+                          className="copy-button"
+                          title="Copiar link"
+                        >
+                          Copiar
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="afiliado-actions">
+                      <button
+                        onClick={() => viewAfiliadoForms(afiliado)}
+                        className="view-forms-button"
+                        disabled={afiliado.totalFormularios === 0}
+                      >
+                        Ver Formulários ({afiliado.totalFormularios || 0})
+                      </button>
+                      <button
+                        onClick={() => deleteAfiliado(afiliado._id)}
+                        className="delete-afiliado-button"
+                      >
+                        Deletar
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Modal de Criar Afiliado */}
+      {showAfiliadoModal && (
+        <div className="modal-overlay" onClick={closeAfiliadoModal}>
+          <div className="modal-content afiliado-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>➕ Novo Afiliado</h2>
+              <button onClick={closeAfiliadoModal} className="modal-close">✕</button>
+            </div>
+            <form onSubmit={createAfiliado} className="modal-body">
+              <div className="modal-form-group">
+                <label>Nome do Afiliado:</label>
+                <input
+                  type="text"
+                  value={afiliadoNome}
+                  onChange={(e) => setAfiliadoNome(e.target.value)}
+                  placeholder="Ex: João Silva, Parceiro X, etc."
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="modal-footer">
+                <button type="button" onClick={closeAfiliadoModal} className="cancel-button">
+                  Cancelar
+                </button>
+                <button type="submit" className="save-button">
+                  Criar Afiliado
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Formulários do Afiliado */}
+      {showAfiliadoFormsModal && (
+        <div className="modal-overlay" onClick={closeAfiliadoFormsModal}>
+          <div className="modal-content afiliado-forms-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📋 Formulários - {afiliadoFormsData.nome}</h2>
+              <button onClick={closeAfiliadoFormsModal} className="modal-close">✕</button>
+            </div>
+            <div className="modal-body">
+              <div className="modal-info">
+                <p><strong>Código:</strong> {afiliadoFormsData.codigo}</p>
+                <p><strong>Total de Formulários:</strong> {afiliadoFormsData.formularios.length}</p>
+              </div>
+              {afiliadoFormsData.formularios.length === 0 ? (
+                <div className="empty-state">
+                  <p>Nenhum formulário recebido ainda deste afiliado</p>
+                </div>
+              ) : (
+                <div className="forms-list">
+                  {afiliadoFormsData.formularios.map((form) => (
+                    <div key={form._id} className="form-mini-card">
+                      <div className="form-mini-header">
+                        <h4>{form.nome}</h4>
+                        <span className={`status-badge ${form.status}`}>
+                          {form.status === 'pendente' ? 'Pendente' : 'Concluído'}
+                        </span>
+                      </div>
+                      <div className="form-mini-details">
+                        <p><strong>E-mail:</strong> {form.email}</p>
+                        <p><strong>CPF:</strong> {form.cpf}</p>
+                        <p><strong>Telefone:</strong> {form.telefone}</p>
+                        <p><strong>Data:</strong> {formatDate(form.createdAt)}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Criar/Editar Formulário */}
       {showFormModal && (

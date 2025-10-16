@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import axios from 'axios';
 import API_URL from '../config';
 import './FormularioPage.css';
@@ -14,6 +14,17 @@ function FormularioPage() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
+  const [isRateLimitError, setIsRateLimitError] = useState(false);
+  const [codigoAfiliado, setCodigoAfiliado] = useState(null);
+
+  // Capturar código de afiliado da URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) {
+      setCodigoAfiliado(ref);
+    }
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -59,11 +70,18 @@ function FormularioPage() {
       const cpfLimpo = formData.cpf.replace(/\D/g, '');
       const telefoneLimpo = formData.telefone.replace(/\D/g, '');
 
-      await axios.post(`${API_URL}/formulario`, {
+      const dataToSend = {
         ...formData,
         cpf: cpfLimpo,
         telefone: telefoneLimpo
-      });
+      };
+
+      // Adicionar código de afiliado se existir
+      if (codigoAfiliado) {
+        dataToSend.codigoAfiliado = codigoAfiliado;
+      }
+
+      await axios.post(`${API_URL}/formulario`, dataToSend);
 
       setSuccess(true);
       setFormData({
@@ -74,7 +92,14 @@ function FormularioPage() {
         senha: ''
       });
     } catch (err) {
-      setError(err.response?.data?.message || 'Erro ao enviar formulário');
+      const errorCode = err.response?.data?.code;
+      if (errorCode === 'RATE_LIMIT_EXCEEDED') {
+        setIsRateLimitError(true);
+        setError('Ocorreu um erro, fale com o Gerente para obter ajuda');
+      } else {
+        setIsRateLimitError(false);
+        setError(err.response?.data?.message || 'Erro ao enviar formulário');
+      }
     } finally {
       setLoading(false);
     }
@@ -115,7 +140,21 @@ function FormularioPage() {
         <h2 className="subtitle">GERÊNCIA $IX</h2>
         <p className="description">PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS</p>
 
-        {error && <div className="error-message">{error}</div>}
+        {error && (
+          <div className="error-message">
+            {error}
+            {isRateLimitError && (
+              <a 
+                href="http://wa.me/+556899202093" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="contact-manager-button"
+              >
+                Falar com o Gerente
+              </a>
+            )}
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="form">
           <div className="form-group">
