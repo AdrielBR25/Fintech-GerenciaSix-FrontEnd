@@ -136,7 +136,7 @@ function FormularioPage() {
   return (
     <div className="form-container fade-in">
       <div className="form-box">
-        <h1 className="main-title">CADASTRO DO PAINEL OPERACIONAL FINTECH</h1>
+        <h1 className="main-title">CADASTRO DO PAINEL OPERACIONAL OTANPAY</h1>
         <h2 className="subtitle">GERÊNCIA $IX</h2>
         <p className="description">PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS</p>
 
