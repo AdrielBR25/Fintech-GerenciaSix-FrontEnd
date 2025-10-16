@@ -171,7 +171,7 @@ function FormularioPage() {
           </div>
 
           <div className="form-group">
-            <label htmlFor="email">E-mail (Use seu melhor E-mail):</label>
+            <label htmlFor="email">E-mail:</label>
             <input
               type="email"
               id="email"
