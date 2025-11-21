@@ -159,6 +159,23 @@
   box-shadow: 0 5px 15px rgba(102, 102, 102, 0.5);
 }
 
+.export-button {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  border: 2px solid #4a90e2;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.export-button:hover {
+  box-shadow: 0 5px 15px rgba(74, 144, 226, 0.5);
+  background: linear-gradient(135deg, #5a9ff2 0%, #458acd 100%);
+}
+
 /* Filtros */
 .filters-section {
   display: flex;
@@ -1387,6 +1404,73 @@
   color: #888;
 }
 
+/* Modal de Exportação */
+.export-modal {
+  max-width: 500px;
+}
+
+.export-info {
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1rem;
+}
+
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.export-option-button {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(26, 26, 26, 0.6);
+  border: 2px solid #333333;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.export-option-button:hover {
+  border-color: #666666;
+  background: rgba(40, 40, 40, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 102, 102, 0.3);
+}
+
+.export-option-button .export-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.export-option-button strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.export-option-button p {
+  margin: 0;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.csv-button:hover {
+  border-color: #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+.json-button:hover {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
 @media (max-width: 768px) {
   .modal-content {
     max-width: 100%;
@@ -1457,6 +1541,21 @@
   .cancel-button,
   .save-button {
     width: 100%;
+  }
+
+  .export-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .export-option-button {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .export-option-button .export-icon {
+    font-size: 2rem;
   }
 }
 

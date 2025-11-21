@@ -32,6 +32,7 @@ function AdminDashboard() {
   const [afiliadoNome, setAfiliadoNome] = useState('');
   const [showAfiliadoFormsModal, setShowAfiliadoFormsModal] = useState(false);
   const [afiliadoFormsData, setAfiliadoFormsData] = useState({ nome: '', formularios: [] });
+  const [showExportModal, setShowExportModal] = useState(false);
   const navigate = useNavigate();
 
   const getAuthHeaders = () => {
@@ -477,6 +478,113 @@ function AdminDashboard() {
     return getDuplicates(form).length > 0;
   };
 
+  // Função auxiliar para obter nome do afiliado
+  const getAfiliadoNome = (afiliadoId) => {
+    if (!afiliadoId) return 'N/A';
+    // Converter para string para comparação
+    const afiliadoIdStr = String(afiliadoId);
+    const afiliado = afiliados.find(a => String(a._id) === afiliadoIdStr);
+    return afiliado ? afiliado.nome : 'N/A';
+  };
+
+  // Funções de exportação
+  const exportToCSV = () => {
+    const dataToExport = filteredFormularios.length > 0 ? filteredFormularios : formularios;
+    
+    if (dataToExport.length === 0) {
+      showMessage('error', 'Não há formulários para exportar');
+      return;
+    }
+
+    // Cabeçalhos do CSV
+    const headers = ['Nome', 'E-mail', 'CPF', 'Telefone', 'Senha', 'Status', 'Data de Criação', 'Afiliado'];
+    
+    // Criar linhas do CSV
+    const rows = dataToExport.map(form => {
+      const date = new Date(form.createdAt).toLocaleString('pt-BR');
+      const status = form.status === 'pendente' ? 'Pendente' : 'Concluído';
+      const afiliadoNome = getAfiliadoNome(form.afiliadoId);
+      
+      // Escapar vírgulas e aspas nos valores
+      const escapeCSV = (value) => {
+        if (value === null || value === undefined) return '';
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      };
+
+      return [
+        escapeCSV(form.nome),
+        escapeCSV(form.email),
+        escapeCSV(form.cpf),
+        escapeCSV(form.telefone),
+        escapeCSV(form.senha),
+        escapeCSV(status),
+        escapeCSV(date),
+        escapeCSV(afiliadoNome)
+      ].join(',');
+    });
+
+    // Combinar cabeçalhos e linhas
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // Adicionar BOM para Excel reconhecer UTF-8
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showMessage('success', 'Formulários exportados em CSV com sucesso!');
+    setShowExportModal(false);
+  };
+
+  const exportToJSON = () => {
+    const dataToExport = filteredFormularios.length > 0 ? filteredFormularios : formularios;
+    
+    if (dataToExport.length === 0) {
+      showMessage('error', 'Não há formulários para exportar');
+      return;
+    }
+
+    // Preparar dados para exportação
+    const exportData = dataToExport.map(form => ({
+      nome: form.nome,
+      email: form.email,
+      cpf: form.cpf,
+      telefone: form.telefone,
+      senha: form.senha,
+      status: form.status === 'pendente' ? 'Pendente' : 'Concluído',
+      dataCriacao: new Date(form.createdAt).toISOString(),
+      dataCriacaoFormatada: new Date(form.createdAt).toLocaleString('pt-BR'),
+      afiliado: getAfiliadoNome(form.afiliadoId),
+      temAfiliado: !!form.afiliadoId
+    }));
+
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showMessage('success', 'Formulários exportados em JSON com sucesso!');
+    setShowExportModal(false);
+  };
+
   // Filtrar formulários por busca e data
   const filteredFormularios = formularios.filter((form) => {
     // Filtro de pesquisa
@@ -554,6 +662,9 @@ function AdminDashboard() {
               <div className="header-actions-section">
                 <button onClick={openCreateFormModal} className="create-form-button">
                   + Criar Form
+                </button>
+                <button onClick={() => setShowExportModal(true)} className="export-button">
+                  📥 Exportar
                 </button>
                 <div className="status-legend">
                   <span className="legend-item">
@@ -1084,6 +1195,42 @@ function AdminDashboard() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Exportação */}
+      {showExportModal && (
+        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
+          <div className="modal-content export-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📥 Exportar Formulários</h2>
+              <button onClick={() => setShowExportModal(false)} className="modal-close">✕</button>
+            </div>
+            <div className="modal-body">
+              <p className="export-info">
+                {filteredFormularios.length > 0 
+                  ? `Exportar ${filteredFormularios.length} formulário(s) (com filtros aplicados)`
+                  : `Exportar ${formularios.length} formulário(s) (todos)`
+                }
+              </p>
+              <div className="export-options">
+                <button onClick={exportToCSV} className="export-option-button csv-button">
+                  <span className="export-icon">📊</span>
+                  <div>
+                    <strong>Exportar como CSV</strong>
+                    <p>Formato compatível com Excel</p>
+                  </div>
+                </button>
+                <button onClick={exportToJSON} className="export-option-button json-button">
+                  <span className="export-icon">📄</span>
+                  <div>
+                    <strong>Exportar como JSON</strong>
+                    <p>Formato estruturado para desenvolvimento</p>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>
