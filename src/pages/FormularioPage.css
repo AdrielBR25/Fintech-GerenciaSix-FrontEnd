@@ -134,6 +134,106 @@
   cursor: not-allowed;
 }
 
+.form-select {
+  width: 100%;
+  padding: 14px 18px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 2px solid #333333;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: inherit;
+}
+
+.form-select:hover {
+  border-color: #666666;
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.2);
+}
+
+.form-select:focus {
+  border-color: #666666;
+  box-shadow: 0 0 15px rgba(102, 102, 102, 0.4);
+  outline: none;
+}
+
+.form-select option {
+  background: #1a1a1a;
+  color: #fff;
+  padding: 10px;
+}
+
+/* Public Fintech Checkboxes */
+.public-fintech-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.public-fintech-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.public-fintech-checkbox-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(102, 102, 102, 0.2);
+  opacity: 0.9;
+}
+
+.public-fintech-checkbox-item.selected {
+  box-shadow: 0 0 15px rgba(102, 102, 102, 0.3);
+}
+
+.public-fintech-checkbox-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.public-fintech-checkbox-circle-wrapper {
+  flex-shrink: 0;
+}
+
+.public-fintech-checkbox-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.public-fintech-checkbox-item:hover .public-fintech-checkbox-circle {
+  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+
+.public-fintech-checkbox-circle.checked {
+  border-color: #fff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+.public-fintech-checkbox-circle .check-mark {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
 /* Success Screen */
 .success-box {
   background: rgba(10, 10, 10, 0.95);
