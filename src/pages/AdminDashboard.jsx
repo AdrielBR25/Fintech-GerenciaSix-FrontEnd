@@ -840,6 +840,13 @@ function AdminDashboard() {
       return;
     }
 
+    // Mapeamento de status
+    const statusMap = {
+      'pendente': 'Pendente',
+      'concluido': 'Concluído',
+      'jaCadastrado': 'Já Cadastrado'
+    };
+
     // Preparar dados para exportação
     const exportData = dataToExport.map(form => {
       const fintechsList = (form.fintechIds || []).map(id => {
