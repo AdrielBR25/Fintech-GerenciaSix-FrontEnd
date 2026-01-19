@@ -105,14 +105,14 @@ function AdminDashboard() {
         { status: newStatus },
         getAuthHeaders()
       );
-      
+
       // Atualizar localmente sem recarregar página
       setFormularios(prev =>
         prev.map(form =>
           form._id === id ? { ...form, status: newStatus } : form
         )
       );
-      
+
       showMessage('success', 'Status atualizado com sucesso!');
     } catch (error) {
       showMessage('error', 'Erro ao atualizar status');
@@ -127,10 +127,10 @@ function AdminDashboard() {
 
     try {
       await axios.delete(`${API_URL}/formulario/${id}`, getAuthHeaders());
-      
+
       // Remover localmente sem recarregar página
       setFormularios(prev => prev.filter(form => form._id !== id));
-      
+
       showMessage('success', 'Formulário deletado com sucesso!');
     } catch (error) {
       showMessage('error', 'Erro ao deletar formulário');
@@ -140,7 +140,7 @@ function AdminDashboard() {
 
   const createAdmin = async (e) => {
     e.preventDefault();
-    
+
     if (!newAdmin.email || !newAdmin.password) {
       showMessage('error', 'Preencha todos os campos');
       return;
@@ -148,7 +148,7 @@ function AdminDashboard() {
 
     try {
       await axios.post(`${API_URL}/admin`, newAdmin, getAuthHeaders());
-      
+
       await fetchAdmins();
       setNewAdmin({ email: '', password: '' });
       showMessage('success', 'Administrador criado com sucesso!');
@@ -175,7 +175,7 @@ function AdminDashboard() {
 
     try {
       await axios.put(`${API_URL}/admin/${id}`, editForm, getAuthHeaders());
-      
+
       await fetchAdmins();
       setEditingAdmin(null);
       setEditForm({ email: '', password: '' });
@@ -192,7 +192,7 @@ function AdminDashboard() {
 
     try {
       await axios.delete(`${API_URL}/admin/${id}`, getAuthHeaders());
-      
+
       await fetchAdmins();
       showMessage('success', 'Administrador deletado com sucesso!');
     } catch (error) {
@@ -213,7 +213,7 @@ function AdminDashboard() {
 
   const createAfiliado = async (e) => {
     e.preventDefault();
-    
+
     if (!afiliadoNome.trim()) {
       showMessage('error', 'Digite o nome do afiliado');
       return;
@@ -221,7 +221,7 @@ function AdminDashboard() {
 
     try {
       await axios.post(`${API_URL}/afiliado`, { nome: afiliadoNome }, getAuthHeaders());
-      
+
       await fetchAfiliados();
       closeAfiliadoModal();
       showMessage('success', 'Afiliado criado com sucesso!');
@@ -237,7 +237,7 @@ function AdminDashboard() {
 
     try {
       await axios.delete(`${API_URL}/afiliado/${id}`, getAuthHeaders());
-      
+
       await fetchAfiliados();
       showMessage('success', 'Afiliado deletado com sucesso!');
     } catch (error) {
@@ -319,7 +319,10 @@ function AdminDashboard() {
       email: form.email,
       cpf: form.cpf,
       telefone: form.telefone,
-      senha: form.senha
+      cpf: form.cpf,
+      telefone: form.telefone,
+      senha: form.senha,
+      obs: form.obs || ''
     });
     setShowFormModal(true);
   };
@@ -402,7 +405,7 @@ function AdminDashboard() {
     }
 
     await fetchFormularios();
-    
+
     if (success > 0) {
       showMessage('success', `${success} formulário(s) importado(s) com sucesso!`);
     }
@@ -455,7 +458,7 @@ function AdminDashboard() {
   // Função para detectar duplicatas
   const getDuplicates = (form) => {
     const duplicates = [];
-    
+
     formularios.forEach(f => {
       if (f._id !== form._id) {
         if (f.email === form.email) {
@@ -469,7 +472,7 @@ function AdminDashboard() {
         }
       }
     });
-    
+
     return [...new Set(duplicates)]; // Remove duplicatas do array
   };
 
@@ -481,7 +484,7 @@ function AdminDashboard() {
   const filteredFormularios = formularios.filter((form) => {
     // Filtro de pesquisa
     const searchLower = searchTerm.toLowerCase();
-    const matchesSearch = searchTerm === '' || 
+    const matchesSearch = searchTerm === '' ||
       form.nome.toLowerCase().includes(searchLower) ||
       form.email.toLowerCase().includes(searchLower) ||
       form.cpf.includes(searchTerm) ||
@@ -587,14 +590,14 @@ function AdminDashboard() {
                   onChange={(e) => handleDateChange(e.target.value)}
                   className="date-input"
                 />
-                <button 
+                <button
                   onClick={setToday}
                   className="today-button"
                   title="Selecionar data de hoje"
                 >
                   📅 Hoje
                 </button>
-                <button 
+                <button
                   onClick={clearDateFilter}
                   className="clear-date-button"
                   title="Limpar filtro de data"
@@ -625,7 +628,7 @@ function AdminDashboard() {
             ) : filteredFormularios.length === 0 ? (
               <div className="empty-state">
                 <p>Nenhum formulário encontrado com os filtros aplicados</p>
-                <button 
+                <button
                   onClick={() => {
                     handleSearchChange('');
                     setToday();
@@ -657,7 +660,7 @@ function AdminDashboard() {
                         {form.status === 'pendente' ? 'Pendente' : 'Concluído'}
                       </span>
                     </div>
-                    
+
                     <div className="card-body">
                       <div className="info-row">
                         <span className="label">E-mail:</span>
@@ -709,6 +712,17 @@ function AdminDashboard() {
                       >
                         🗑 Deletar
                       </button>
+                    </div>
+
+                    <div className="card-obs">
+                      <label>Observações:</label>
+                      <textarea
+                        readOnly
+                        value={form.obs || ''}
+                        className="card-obs-text"
+                        rows="2"
+                        placeholder="Nenhuma observação"
+                      />
                     </div>
                   </div>
                 ))}
@@ -896,7 +910,7 @@ function AdminDashboard() {
 
       {/* Modal de Criar Afiliado */}
       {showAfiliadoModal && (
-        <div className="modal-overlay" onClick={closeAfiliadoModal}>
+        <div className="modal-overlay">
           <div className="modal-content afiliado-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>➕ Novo Afiliado</h2>
@@ -929,7 +943,7 @@ function AdminDashboard() {
 
       {/* Modal de Formulários do Afiliado */}
       {showAfiliadoFormsModal && (
-        <div className="modal-overlay" onClick={closeAfiliadoFormsModal}>
+        <div className="modal-overlay">
           <div className="modal-content afiliado-forms-modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>📋 Formulários - {afiliadoFormsData.nome}</h2>
@@ -971,7 +985,7 @@ function AdminDashboard() {
 
       {/* Modal de Criar/Editar Formulário */}
       {showFormModal && (
-        <div className="modal-overlay" onClick={closeFormModal}>
+        <div className="modal-overlay">
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h2>{formMode === 'create' ? '➕ Criar Formulário' : '✏️ Editar Formulário'}</h2>
@@ -1050,6 +1064,17 @@ function AdminDashboard() {
                     />
                   </div>
 
+                  <div className="modal-form-group">
+                    <label>Observações (Max 100):</label>
+                    <textarea
+                      value={formData.obs || ''}
+                      onChange={(e) => setFormData({ ...formData, obs: e.target.value })}
+                      placeholder="Observações do cadastro..."
+                      maxLength="100"
+                      rows="3"
+                    />
+                  </div>
+
                   <button onClick={handleSaveForm} className="modal-save-button">
                     {formMode === 'create' ? '✓ Criar Formulário' : '✓ Salvar Alterações'}
                   </button>
@@ -1061,12 +1086,12 @@ function AdminDashboard() {
                   </p>
                   <div className="import-example">
                     <code>
-                      53:<br/>
-                      Nome: Kethelin Juliana Perini<br/>
-                      E-mail: kethelinjulianaperini@gmail.com<br/>
-                      CPF: 05919418214<br/>
-                      Telefone: 69984466998<br/>
-                      Senha: Segredo123@<br/>
+                      53:<br />
+                      Nome: Kethelin Juliana Perini<br />
+                      E-mail: kethelinjulianaperini@gmail.com<br />
+                      CPF: 05919418214<br />
+                      Telefone: 69984466998<br />
+                      Senha: Segredo123@<br />
                       Data: 2025/10/09 5:41:04 PM GMT-3
                     </code>
                   </div>
