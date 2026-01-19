@@ -16,14 +16,37 @@ function FormularioPage() {
   const [error, setError] = useState('');
   const [isRateLimitError, setIsRateLimitError] = useState(false);
   const [codigoAfiliado, setCodigoAfiliado] = useState(null);
+  const [config, setConfig] = useState({
+    tituloPrincipal: 'CADASTRO DO PAINEL OPERACIONAL OTANPAY',
+    subtitulo: 'GERÊNCIA $IX',
+    descricao: 'PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS'
+  });
 
-  // Capturar código de afiliado da URL
+  // Capturar código de afiliado da URL e carregar configurações
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const ref = params.get('ref');
     if (ref) {
       setCodigoAfiliado(ref);
     }
+
+    // Carregar configurações do formulário
+    const fetchConfig = async () => {
+      try {
+        const response = await axios.get(`${API_URL}/config`);
+        if (response.data) {
+          setConfig({
+            tituloPrincipal: response.data.tituloPrincipal || 'CADASTRO DO PAINEL OPERACIONAL OTANPAY',
+            subtitulo: response.data.subtitulo || 'GERÊNCIA $IX',
+            descricao: response.data.descricao || 'PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS'
+          });
+        }
+      } catch (error) {
+        console.error('Erro ao carregar configurações:', error);
+      }
+    };
+
+    fetchConfig();
   }, []);
 
   const handleChange = (e) => {
@@ -136,9 +159,9 @@ function FormularioPage() {
   return (
     <div className="form-container fade-in">
       <div className="form-box">
-        <h1 className="main-title">CADASTRO DO PAINEL OPERACIONAL OTANPAY</h1>
-        <h2 className="subtitle">GERÊNCIA $IX</h2>
-        <p className="description">PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS</p>
+        <h1 className="main-title">{config.tituloPrincipal}</h1>
+        <h2 className="subtitle">{config.subtitulo}</h2>
+        <p className="description">{config.descricao}</p>
 
         {error && (
           <div className="error-message">
@@ -222,6 +245,7 @@ function FormularioPage() {
               required
             />
           </div>
+
 
           <button type="submit" className="submit-button" disabled={loading}>
             {loading ? 'Enviando...' : 'Enviar Formulário'}

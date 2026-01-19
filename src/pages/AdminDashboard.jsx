@@ -8,6 +8,7 @@ function AdminDashboard() {
   const [formularios, setFormularios] = useState([]);
   const [admins, setAdmins] = useState([]);
   const [afiliados, setAfiliados] = useState([]);
+  const [fintechs, setFintechs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('formularios');
   const [newAdmin, setNewAdmin] = useState({ email: '', password: '' });
@@ -19,12 +20,14 @@ function AdminDashboard() {
     return saved !== null ? saved : new Date().toISOString().split('T')[0];
   });
   const [showDuplicates, setShowDuplicates] = useState(localStorage.getItem('filterDuplicates') === 'true');
+  const [filterStatus, setFilterStatus] = useState(localStorage.getItem('filterStatus') || 'todos');
+  const [filterFintech, setFilterFintech] = useState(localStorage.getItem('filterFintech') || 'todos');
   const [editingAdmin, setEditingAdmin] = useState(null);
   const [editForm, setEditForm] = useState({ email: '', password: '' });
   const [showFormModal, setShowFormModal] = useState(false);
   const [formMode, setFormMode] = useState('create'); // 'create' ou 'edit'
   const [editingFormId, setEditingFormId] = useState(null);
-  const [formData, setFormData] = useState({ nome: '', email: '', cpf: '', telefone: '', senha: '' });
+  const [formData, setFormData] = useState({ nome: '', email: '', cpf: '', telefone: '', senha: '', fintechIds: [] });
   const [importMode, setImportMode] = useState('manual'); // 'manual' ou 'import'
   const [importText, setImportText] = useState('');
   // Estados para afiliados
@@ -32,6 +35,14 @@ function AdminDashboard() {
   const [afiliadoNome, setAfiliadoNome] = useState('');
   const [showAfiliadoFormsModal, setShowAfiliadoFormsModal] = useState(false);
   const [afiliadoFormsData, setAfiliadoFormsData] = useState({ nome: '', formularios: [] });
+  const [showExportModal, setShowExportModal] = useState(false);
+  // Estados para fintechs
+  const [showFintechModal, setShowFintechModal] = useState(false);
+  const [fintechForm, setFintechForm] = useState({ nome: '', cor: '#666666' });
+  const [editingFintech, setEditingFintech] = useState(null);
+  // Estados para configurações
+  const [config, setConfig] = useState({ tituloPrincipal: '', subtitulo: '', descricao: '' });
+  const [configForm, setConfigForm] = useState({ tituloPrincipal: '', subtitulo: '', descricao: '' });
   const navigate = useNavigate();
 
   const getAuthHeaders = () => {
@@ -69,6 +80,29 @@ function AdminDashboard() {
     }
   };
 
+  const fetchFintechs = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/fintech/admin`, getAuthHeaders());
+      setFintechs(response.data);
+    } catch (error) {
+      console.error('Erro ao buscar fintechs:', error);
+    }
+  };
+
+  const fetchConfig = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/config/admin`, getAuthHeaders());
+      setConfig(response.data);
+      setConfigForm({
+        tituloPrincipal: response.data.tituloPrincipal || 'CADASTRO DO PAINEL OPERACIONAL OTANPAY',
+        subtitulo: response.data.subtitulo || 'GERÊNCIA $IX',
+        descricao: response.data.descricao || 'PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS'
+      });
+    } catch (error) {
+      console.error('Erro ao buscar configurações:', error);
+    }
+  };
+
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
     if (!token) {
@@ -77,16 +111,17 @@ function AdminDashboard() {
     }
 
     const loadData = async () => {
-      await Promise.all([fetchFormularios(), fetchAdmins(), fetchAfiliados()]);
+      await Promise.all([fetchFormularios(), fetchAdmins(), fetchAfiliados(), fetchFintechs(), fetchConfig()]);
       setLoading(false);
     };
 
     loadData();
 
-    // Atualizar formulários e afiliados a cada 5 segundos
+    // Atualizar formulários, afiliados e fintechs a cada 5 segundos
     const interval = setInterval(() => {
       fetchFormularios();
       fetchAfiliados();
+      fetchFintechs();
     }, 5000);
 
     return () => clearInterval(interval);
@@ -116,6 +151,61 @@ function AdminDashboard() {
       showMessage('success', 'Status atualizado com sucesso!');
     } catch (error) {
       showMessage('error', 'Erro ao atualizar status');
+      console.error('Erro:', error);
+    }
+  };
+
+  const toggleFormularioFintech = async (formId, fintechId) => {
+    try {
+      // Buscar o formulário atual para manter os outros dados
+      const form = formularios.find(f => f._id === formId);
+      if (!form) return;
+
+      const currentIds = getFormularioFintechIds(form);
+      const fintechIdStr = String(fintechId);
+      const isSelected = currentIds.includes(fintechIdStr);
+
+      // Toggle: se está selecionado, remove; se não está, adiciona
+      let newIds;
+      if (isSelected) {
+        newIds = currentIds.filter(id => id !== fintechIdStr);
+      } else {
+        newIds = [...currentIds, fintechIdStr];
+      }
+
+      const updateData = {
+        nome: form.nome,
+        email: form.email,
+        cpf: form.cpf,
+        telefone: form.telefone,
+        senha: form.senha,
+        fintechIds: newIds
+      };
+
+      // Atualizar otimisticamente primeiro para feedback imediato
+      const selectedFintechs = newIds.map(id => {
+        const fintech = fintechs.find(ft => String(ft._id) === id);
+        return fintech || id;
+      });
+
+      setFormularios(prev =>
+        prev.map(f => {
+          if (f._id === formId) {
+            return { ...f, fintechIds: selectedFintechs };
+          }
+          return f;
+        })
+      );
+
+      await axios.put(`${API_URL}/formulario/${formId}`, updateData, getAuthHeaders());
+      
+      const fintech = fintechs.find(ft => String(ft._id) === fintechIdStr);
+      const action = isSelected ? 'removida' : 'adicionada';
+      showMessage('success', `Fintech ${fintech?.nome || ''} ${action} com sucesso!`);
+    } catch (error) {
+      // Reverter em caso de erro
+      fetchFormularios();
+      showMessage('error', 'Erro ao atualizar fintech');
       console.error('Erro:', error);
     }
   };
@@ -291,6 +381,16 @@ function AdminDashboard() {
     localStorage.setItem('filterDuplicates', value.toString());
   };
 
+  const handleStatusFilterChange = (value) => {
+    setFilterStatus(value);
+    localStorage.setItem('filterStatus', value);
+  };
+
+  const handleFintechFilterChange = (value) => {
+    setFilterFintech(value);
+    localStorage.setItem('filterFintech', value);
+  };
+
   const setToday = () => {
     const today = new Date().toISOString().split('T')[0];
     setSelectedDate(today);
@@ -305,7 +405,7 @@ function AdminDashboard() {
   // Funções para gerenciar formulários
   const openCreateFormModal = () => {
     setFormMode('create');
-    setFormData({ nome: '', email: '', cpf: '', telefone: '', senha: '' });
+    setFormData({ nome: '', email: '', cpf: '', telefone: '', senha: '', fintechIds: [] });
     setImportText('');
     setImportMode('manual');
     setShowFormModal(true);
@@ -314,22 +414,33 @@ function AdminDashboard() {
   const openEditFormModal = (form) => {
     setFormMode('edit');
     setEditingFormId(form._id);
+    const fintechIds = (form.fintechIds || []).map(id => {
+      if (typeof id === 'object' && id._id) {
+        return String(id._id);
+      }
+      return String(id);
+    });
     setFormData({
       nome: form.nome,
       email: form.email,
       cpf: form.cpf,
       telefone: form.telefone,
+<<<<<<< HEAD
       cpf: form.cpf,
       telefone: form.telefone,
       senha: form.senha,
       obs: form.obs || ''
+=======
+      senha: form.senha,
+      fintechIds: fintechIds
+>>>>>>> 11a1bf4b8a562570db8ad7a4011444f2bf7f2b05
     });
     setShowFormModal(true);
   };
 
   const closeFormModal = () => {
     setShowFormModal(false);
-    setFormData({ nome: '', email: '', cpf: '', telefone: '', senha: '' });
+    setFormData({ nome: '', email: '', cpf: '', telefone: '', senha: '', fintechIds: [] });
     setImportText('');
     setEditingFormId(null);
   };
@@ -430,11 +541,17 @@ function AdminDashboard() {
     }
 
     try {
+      const dataToSend = { ...formData };
+      // Garantir que fintechIds seja um array
+      if (!dataToSend.fintechIds || !Array.isArray(dataToSend.fintechIds)) {
+        dataToSend.fintechIds = [];
+      }
+
       if (formMode === 'create') {
-        await axios.post(`${API_URL}/formulario/admin-create`, formData, getAuthHeaders());
+        await axios.post(`${API_URL}/formulario/admin-create`, dataToSend, getAuthHeaders());
         showMessage('success', 'Formulário criado com sucesso!');
       } else {
-        await axios.put(`${API_URL}/formulario/${editingFormId}`, formData, getAuthHeaders());
+        await axios.put(`${API_URL}/formulario/${editingFormId}`, dataToSend, getAuthHeaders());
         showMessage('success', 'Formulário atualizado com sucesso!');
       }
 
@@ -455,7 +572,42 @@ function AdminDashboard() {
     return date.toLocaleDateString('pt-BR');
   };
 
-  // Função para detectar duplicatas
+  // Função para contar quantos formulários têm o mesmo valor
+  const countFormsWithValue = (field, value) => {
+    if (!value || !formularios.length) return 0;
+    return formularios.filter(f => f[field] && f[field] === value).length;
+  };
+
+  // Função para encontrar o primeiro formulário (original) com um valor específico
+  const getOriginalForm = (field, value) => {
+    if (!value || !formularios.length) return null;
+    // Filtra formulários com o mesmo valor e ordena por data de criação
+    const formsWithValue = formularios
+      .filter(f => f[field] && f[field] === value)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    return formsWithValue.length > 0 ? formsWithValue[0] : null;
+  };
+
+  // Verificar se um campo específico tem duplicatas e é o original (primeiro criado)
+  const isOriginal = (form, field) => {
+    if (!form[field]) return false;
+    // Só é original se há mais de 1 formulário com esse valor
+    if (countFormsWithValue(field, form[field]) <= 1) return false;
+    const original = getOriginalForm(field, form[field]);
+    return original && original._id === form._id;
+  };
+
+  // Verificar se um campo específico é duplicata
+  const isDuplicate = (form, field) => {
+    if (!form[field]) return false;
+    // Só é duplicata se há mais de 1 formulário com esse valor
+    if (countFormsWithValue(field, form[field]) <= 1) return false;
+    const original = getOriginalForm(field, form[field]);
+    // É duplicata se existe um original e não é o próprio formulário
+    return original && original._id !== form._id;
+  };
+
+  // Função para detectar duplicatas (mantida para filtro)
   const getDuplicates = (form) => {
     const duplicates = [];
 
@@ -480,7 +632,268 @@ function AdminDashboard() {
     return getDuplicates(form).length > 0;
   };
 
-  // Filtrar formulários por busca e data
+  // Função auxiliar para obter nome do afiliado
+  const getAfiliadoNome = (afiliadoId) => {
+    if (!afiliadoId) return 'N/A';
+    // Converter para string para comparação
+    const afiliadoIdStr = String(afiliadoId);
+    const afiliado = afiliados.find(a => String(a._id) === afiliadoIdStr);
+    return afiliado ? afiliado.nome : 'N/A';
+  };
+
+  const getFintechNome = (fintechId) => {
+    if (!fintechId) return null;
+    // Pode ser objeto populado ou apenas ID
+    if (typeof fintechId === 'object' && fintechId.nome) {
+      return fintechId;
+    }
+    const fintechIdStr = String(fintechId);
+    const fintech = fintechs.find(f => String(f._id) === fintechIdStr);
+    return fintech || null;
+  };
+
+  const getFormularioFintechIds = (form) => {
+    if (!form.fintechIds || !Array.isArray(form.fintechIds)) {
+      return [];
+    }
+    return form.fintechIds.map(id => {
+      if (typeof id === 'object' && id._id) {
+        return String(id._id);
+      }
+      return String(id);
+    });
+  };
+
+  const isFintechSelected = (form, fintechId) => {
+    const selectedIds = getFormularioFintechIds(form);
+    return selectedIds.includes(String(fintechId));
+  };
+
+  // Funções para gerenciar fintechs
+  const openFintechModal = () => {
+    setFintechForm({ nome: '', cor: '#666666' });
+    setEditingFintech(null);
+    setShowFintechModal(true);
+  };
+
+  const closeFintechModal = () => {
+    setShowFintechModal(false);
+    setFintechForm({ nome: '', cor: '#666666' });
+    setEditingFintech(null);
+  };
+
+  const startEditFintech = (fintech) => {
+    setEditingFintech(fintech._id);
+    setFintechForm({ nome: fintech.nome, cor: fintech.cor || '#666666' });
+    setShowFintechModal(true);
+  };
+
+  const createFintech = async (e) => {
+    e.preventDefault();
+    
+    if (!fintechForm.nome.trim()) {
+      showMessage('error', 'Digite o nome da fintech');
+      return;
+    }
+
+    try {
+      await axios.post(`${API_URL}/fintech`, fintechForm, getAuthHeaders());
+      await fetchFintechs();
+      closeFintechModal();
+      showMessage('success', 'Fintech criada com sucesso!');
+    } catch (error) {
+      showMessage('error', error.response?.data?.message || 'Erro ao criar fintech');
+    }
+  };
+
+  const updateFintech = async (e) => {
+    e.preventDefault();
+    
+    if (!fintechForm.nome.trim()) {
+      showMessage('error', 'Digite o nome da fintech');
+      return;
+    }
+
+    try {
+      await axios.put(`${API_URL}/fintech/${editingFintech}`, fintechForm, getAuthHeaders());
+      await fetchFintechs();
+      closeFintechModal();
+      showMessage('success', 'Fintech atualizada com sucesso!');
+    } catch (error) {
+      showMessage('error', error.response?.data?.message || 'Erro ao atualizar fintech');
+    }
+  };
+
+  const deleteFintech = async (id) => {
+    if (!window.confirm('Tem certeza que deseja deletar esta fintech? Os formulários associados não serão deletados.')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/fintech/${id}`, getAuthHeaders());
+      await fetchFintechs();
+      showMessage('success', 'Fintech deletada com sucesso!');
+    } catch (error) {
+      showMessage('error', 'Erro ao deletar fintech');
+    }
+  };
+
+  const toggleFintechStatus = async (fintech) => {
+    try {
+      await axios.put(`${API_URL}/fintech/${fintech._id}`, {
+        ...fintech,
+        ativo: !fintech.ativo
+      }, getAuthHeaders());
+      await fetchFintechs();
+      showMessage('success', `Fintech ${fintech.ativo ? 'desativada' : 'ativada'} com sucesso!`);
+    } catch (error) {
+      showMessage('error', 'Erro ao alterar status da fintech');
+    }
+  };
+
+  // Função para atualizar configurações
+  const updateConfig = async (e) => {
+    e.preventDefault();
+    
+    if (!configForm.tituloPrincipal.trim() || !configForm.subtitulo.trim() || !configForm.descricao.trim()) {
+      showMessage('error', 'Preencha todos os campos');
+      return;
+    }
+
+    try {
+      await axios.put(`${API_URL}/config`, configForm, getAuthHeaders());
+      await fetchConfig();
+      showMessage('success', 'Configurações atualizadas com sucesso!');
+    } catch (error) {
+      showMessage('error', error.response?.data?.message || 'Erro ao atualizar configurações');
+    }
+  };
+
+  // Funções de exportação
+  const exportToCSV = () => {
+    const dataToExport = filteredFormularios.length > 0 ? filteredFormularios : formularios;
+    
+    if (dataToExport.length === 0) {
+      showMessage('error', 'Não há formulários para exportar');
+      return;
+    }
+
+    // Cabeçalhos do CSV
+    const headers = ['Nome', 'E-mail', 'CPF', 'Telefone', 'Senha', 'Status', 'Data de Criação', 'Afiliado', 'Fintechs'];
+    
+    // Criar linhas do CSV
+    const rows = dataToExport.map(form => {
+      const date = new Date(form.createdAt).toLocaleString('pt-BR');
+      const statusMap = {
+        'pendente': 'Pendente',
+        'concluido': 'Concluído',
+        'jaCadastrado': 'Já Cadastrado'
+      };
+      const status = statusMap[form.status] || 'Pendente';
+      const afiliadoNome = getAfiliadoNome(form.afiliadoId);
+      const fintechsNomes = (form.fintechIds || []).map(id => {
+        const fintech = getFintechNome(id);
+        return fintech ? fintech.nome : '';
+      }).filter(n => n).join('; ') || 'N/A';
+      
+      // Escapar vírgulas e aspas nos valores
+      const escapeCSV = (value) => {
+        if (value === null || value === undefined) return '';
+        const stringValue = String(value);
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
+        }
+        return stringValue;
+      };
+
+      return [
+        escapeCSV(form.nome),
+        escapeCSV(form.email),
+        escapeCSV(form.cpf),
+        escapeCSV(form.telefone),
+        escapeCSV(form.senha),
+        escapeCSV(status),
+        escapeCSV(date),
+        escapeCSV(afiliadoNome),
+        escapeCSV(fintechsNomes)
+      ].join(',');
+    });
+
+    // Combinar cabeçalhos e linhas
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    
+    // Adicionar BOM para Excel reconhecer UTF-8
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showMessage('success', 'Formulários exportados em CSV com sucesso!');
+    setShowExportModal(false);
+  };
+
+  const exportToJSON = () => {
+    const dataToExport = filteredFormularios.length > 0 ? filteredFormularios : formularios;
+    
+    if (dataToExport.length === 0) {
+      showMessage('error', 'Não há formulários para exportar');
+      return;
+    }
+
+    // Mapeamento de status
+    const statusMap = {
+      'pendente': 'Pendente',
+      'concluido': 'Concluído',
+      'jaCadastrado': 'Já Cadastrado'
+    };
+
+    // Preparar dados para exportação
+    const exportData = dataToExport.map(form => {
+      const fintechsList = (form.fintechIds || []).map(id => {
+        const fintech = getFintechNome(id);
+        return fintech ? { nome: fintech.nome, cor: fintech.cor } : null;
+      }).filter(f => f);
+      
+      return {
+        nome: form.nome,
+        email: form.email,
+        cpf: form.cpf,
+        telefone: form.telefone,
+        senha: form.senha,
+        status: statusMap[form.status] || 'Pendente',
+        dataCriacao: new Date(form.createdAt).toISOString(),
+        dataCriacaoFormatada: new Date(form.createdAt).toLocaleString('pt-BR'),
+        afiliado: getAfiliadoNome(form.afiliadoId),
+        temAfiliado: !!form.afiliadoId,
+        fintechs: fintechsList,
+        fintechsNomes: fintechsList.map(f => f.nome).join(', ') || 'Nenhuma'
+      };
+    });
+
+    const jsonContent = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.json`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showMessage('success', 'Formulários exportados em JSON com sucesso!');
+    setShowExportModal(false);
+  };
+
+  // Filtrar formulários por busca, data, status, fintech e duplicatas
   const filteredFormularios = formularios.filter((form) => {
     // Filtro de pesquisa
     const searchLower = searchTerm.toLowerCase();
@@ -494,10 +907,22 @@ function AdminDashboard() {
     const formDate = new Date(form.createdAt).toISOString().split('T')[0];
     const matchesDate = selectedDate === '' || formDate === selectedDate;
 
+    // Filtro de status
+    const matchesStatus = filterStatus === 'todos' || form.status === filterStatus;
+
+    // Filtro de fintech
+    const formFintechIds = form.fintechIds || [];
+    const matchesFintech = filterFintech === 'todos' || 
+      (filterFintech === 'sem-fintech' && (!formFintechIds || formFintechIds.length === 0)) ||
+      (formFintechIds.length > 0 && formFintechIds.some(id => {
+        const fintechId = typeof id === 'object' ? id._id : id;
+        return String(fintechId) === filterFintech;
+      }));
+
     // Filtro de duplicatas
     const matchesDuplicates = !showDuplicates || hasDuplicates(form);
 
-    return matchesSearch && matchesDate && matchesDuplicates;
+    return matchesSearch && matchesDate && matchesStatus && matchesFintech && matchesDuplicates;
   });
 
   if (loading) {
@@ -547,6 +972,12 @@ function AdminDashboard() {
         >
           Administradores ({admins.length})
         </button>
+        <button
+          className={`tab ${activeTab === 'configuracoes' ? 'active' : ''}`}
+          onClick={() => setActiveTab('configuracoes')}
+        >
+          ⚙️ Configurações
+        </button>
       </div>
 
       <div className="dashboard-content">
@@ -558,6 +989,9 @@ function AdminDashboard() {
                 <button onClick={openCreateFormModal} className="create-form-button">
                   + Criar Form
                 </button>
+                <button onClick={() => setShowExportModal(true)} className="export-button">
+                  📥 Exportar
+                </button>
                 <div className="status-legend">
                   <span className="legend-item">
                     <span className="status-badge pendente">Pendente</span>
@@ -566,6 +1000,10 @@ function AdminDashboard() {
                   <span className="legend-item">
                     <span className="status-badge concluido">Concluído</span>
                     {formularios.filter(f => f.status === 'concluido').length}
+                  </span>
+                  <span className="legend-item">
+                    <span className="status-badge jaCadastrado">Já Cadastrado</span>
+                    {formularios.filter(f => f.status === 'jaCadastrado').length}
                   </span>
                 </div>
               </div>
@@ -615,6 +1053,37 @@ function AdminDashboard() {
                   <span>🔍 Mostrar apenas duplicatas</span>
                 </label>
               </div>
+              <div className="status-filter">
+                <label htmlFor="status-filter">📊 Status:</label>
+                <select
+                  id="status-filter"
+                  value={filterStatus}
+                  onChange={(e) => handleStatusFilterChange(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="todos">Todos</option>
+                  <option value="pendente">Pendente</option>
+                  <option value="concluido">Concluído</option>
+                  <option value="jaCadastrado">Já Cadastrado</option>
+                </select>
+              </div>
+              <div className="fintech-filter">
+                <label htmlFor="fintech-filter">🏦 Fintech:</label>
+                <select
+                  id="fintech-filter"
+                  value={filterFintech}
+                  onChange={(e) => handleFintechFilterChange(e.target.value)}
+                  className="filter-select"
+                >
+                  <option value="todos">Todas</option>
+                  <option value="sem-fintech">Sem Fintech</option>
+                  {fintechs.filter(f => f.ativo).map(fintech => (
+                    <option key={fintech._id} value={fintech._id}>
+                      {fintech.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
 
             <div className="results-info">
@@ -633,6 +1102,8 @@ function AdminDashboard() {
                     handleSearchChange('');
                     setToday();
                     handleDuplicatesChange(false);
+                    handleStatusFilterChange('todos');
+                    handleFintechFilterChange('todos');
                   }}
                   className="reset-filters-button"
                 >
@@ -646,33 +1117,30 @@ function AdminDashboard() {
                     <div className="card-header">
                       <div className="card-title-section">
                         <h3>{form.nome}</h3>
-                        {hasDuplicates(form) && (
-                          <div className="duplicate-badges">
-                            {getDuplicates(form).map((dup, idx) => (
-                              <span key={idx} className="duplicate-badge" title={`${dup} duplicado`}>
-                                ⚠️ {dup}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                       <span className={`status-badge ${form.status}`}>
-                        {form.status === 'pendente' ? 'Pendente' : 'Concluído'}
+                        {form.status === 'pendente' ? 'Pendente' : form.status === 'concluido' ? 'Concluído' : 'Já Cadastrado'}
                       </span>
                     </div>
 
                     <div className="card-body">
                       <div className="info-row">
                         <span className="label">E-mail:</span>
-                        <span className="value">{form.email}</span>
+                        <span className={`value ${isOriginal(form, 'email') ? 'field-original' : isDuplicate(form, 'email') ? 'field-duplicate' : ''}`}>
+                          {form.email}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="label">CPF:</span>
-                        <span className="value">{form.cpf}</span>
+                        <span className={`value ${isOriginal(form, 'cpf') ? 'field-original' : isDuplicate(form, 'cpf') ? 'field-duplicate' : ''}`}>
+                          {form.cpf}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="label">Telefone:</span>
-                        <span className="value">{form.telefone}</span>
+                        <span className={`value ${isOriginal(form, 'telefone') ? 'field-original' : isDuplicate(form, 'telefone') ? 'field-duplicate' : ''}`}>
+                          {form.telefone}
+                        </span>
                       </div>
                       <div className="info-row">
                         <span className="label">Senha:</span>
@@ -681,6 +1149,43 @@ function AdminDashboard() {
                       <div className="info-row">
                         <span className="label">Data:</span>
                         <span className="value">{formatDate(form.createdAt)}</span>
+                      </div>
+                      <div className="info-row fintech-checkboxes-row">
+                        <span className="label">🏦 Fintechs:</span>
+                        <div className="fintech-checkboxes-container">
+                          {fintechs.filter(f => f.ativo).length > 0 ? (
+                            fintechs.filter(f => f.ativo).map(fintech => {
+                              const isSelected = isFintechSelected(form, fintech._id);
+                              const fintechColor = fintech.cor ? fintech.cor.trim() : '#666666';
+                              return (
+                                <label
+                                  key={fintech._id}
+                                  className={`fintech-checkbox-item ${isSelected ? 'selected' : ''}`}
+                                  style={{ 
+                                    backgroundColor: isSelected ? `${fintechColor}30` : `${fintechColor}15`,
+                                    borderColor: fintechColor
+                                  }}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    toggleFormularioFintech(form._id, fintech._id);
+                                  }}
+                                >
+                                  <span className="fintech-checkbox-name">{fintech.nome}</span>
+                                  <div className="fintech-checkbox-circle-wrapper">
+                                    <div
+                                      className={`fintech-checkbox-circle ${isSelected ? 'checked' : ''}`}
+                                      style={{ backgroundColor: fintechColor }}
+                                    >
+                                      {isSelected && <span className="check-mark">✓</span>}
+                                    </div>
+                                  </div>
+                                </label>
+                              );
+                            })
+                          ) : (
+                            <span className="no-fintechs-message">Nenhuma fintech cadastrada</span>
+                          )}
+                        </div>
                       </div>
                     </div>
 
@@ -691,19 +1196,28 @@ function AdminDashboard() {
                       >
                         ✏️ Editar
                       </button>
-                      {form.status === 'pendente' ? (
+                      {form.status === 'pendente' && (
                         <button
                           onClick={() => updateStatus(form._id, 'concluido')}
                           className="action-button concluir"
                         >
                           ✓ Concluir
                         </button>
-                      ) : (
+                      )}
+                      {(form.status === 'concluido' || form.status === 'jaCadastrado') && (
                         <button
                           onClick={() => updateStatus(form._id, 'pendente')}
                           className="action-button pendente"
                         >
                           ← Pendente
+                        </button>
+                      )}
+                      {form.status !== 'jaCadastrado' && (
+                        <button
+                          onClick={() => updateStatus(form._id, 'jaCadastrado')}
+                          className="action-button jaCadastrado"
+                        >
+                          📋 Já Cadastrado
                         </button>
                       )}
                       <button
@@ -906,7 +1420,208 @@ function AdminDashboard() {
             )}
           </div>
         )}
+
+        {activeTab === 'configuracoes' && (
+          <div className="configuracoes-section">
+            <div className="section-header">
+              <h2>⚙️ Configurações</h2>
+            </div>
+
+            <div className="config-section">
+              <div className="config-section-header">
+                <h3>📝 Títulos do Formulário</h3>
+              </div>
+              
+              <form onSubmit={updateConfig} className="config-form">
+                <div className="config-form-group">
+                  <label htmlFor="tituloPrincipal">Título Principal:</label>
+                  <input
+                    type="text"
+                    id="tituloPrincipal"
+                    value={configForm.tituloPrincipal}
+                    onChange={(e) => setConfigForm({ ...configForm, tituloPrincipal: e.target.value })}
+                    placeholder="CADASTRO DO PAINEL OPERACIONAL OTANPAY"
+                    className="config-input"
+                    required
+                  />
+                </div>
+
+                <div className="config-form-group">
+                  <label htmlFor="subtitulo">Subtítulo:</label>
+                  <input
+                    type="text"
+                    id="subtitulo"
+                    value={configForm.subtitulo}
+                    onChange={(e) => setConfigForm({ ...configForm, subtitulo: e.target.value })}
+                    placeholder="GERÊNCIA $IX"
+                    className="config-input"
+                    required
+                  />
+                </div>
+
+                <div className="config-form-group">
+                  <label htmlFor="descricao">Descrição:</label>
+                  <textarea
+                    id="descricao"
+                    value={configForm.descricao}
+                    onChange={(e) => setConfigForm({ ...configForm, descricao: e.target.value })}
+                    placeholder="PREENCHA O FORMULÁRIO ABAIXO COM OS SEUS DADOS"
+                    className="config-textarea"
+                    rows="3"
+                    required
+                  />
+                </div>
+
+                <button type="submit" className="config-save-button">
+                  💾 Salvar Configurações
+                </button>
+              </form>
+            </div>
+
+            <div className="config-section">
+              <div className="config-section-header">
+                <h3>🏦 Gerenciar Fintechs</h3>
+                <button onClick={openFintechModal} className="create-form-button">
+                  + Nova Fintech
+                </button>
+              </div>
+
+              {fintechs.length === 0 ? (
+                <div className="empty-state">
+                  <p>Nenhuma fintech cadastrada ainda</p>
+                  <p className="empty-subtitle">Crie sua primeira fintech para associar aos formulários</p>
+                </div>
+              ) : (
+                <div className="fintechs-grid">
+                  {fintechs.map((fintech) => (
+                    <div key={fintech._id} className="fintech-card">
+                      <div className="fintech-header">
+                        <div className="fintech-info">
+                          <div 
+                            className="fintech-color-indicator" 
+                            style={{ backgroundColor: fintech.cor ? fintech.cor.trim() : '#666666' }}
+                          ></div>
+                          <div>
+                            <h3>{fintech.nome}</h3>
+                            <p className="fintech-status">
+                              {fintech.ativo ? (
+                                <span className="status-active">✓ Ativa</span>
+                              ) : (
+                                <span className="status-inactive">✕ Inativa</span>
+                              )}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="fintech-actions">
+                        <button
+                          onClick={() => toggleFintechStatus(fintech)}
+                          className={`toggle-status-button ${fintech.ativo ? 'active' : 'inactive'}`}
+                          title={fintech.ativo ? 'Desativar fintech' : 'Ativar fintech'}
+                        >
+                          {fintech.ativo ? '🔒 Desativar' : '🔓 Ativar'}
+                        </button>
+                        <button
+                          onClick={() => startEditFintech(fintech)}
+                          className="edit-fintech-button"
+                          title="Editar fintech"
+                        >
+                          ✏️ Editar
+                        </button>
+                        <button
+                          onClick={() => deleteFintech(fintech._id)}
+                          className="delete-fintech-button"
+                          title="Deletar fintech"
+                        >
+                          🗑 Deletar
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Modal de Criar/Editar Fintech */}
+      {showFintechModal && (
+        <div className="modal-overlay" onClick={closeFintechModal}>
+          <div className="modal-content fintech-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingFintech ? '✏️ Editar Fintech' : '➕ Nova Fintech'}</h2>
+              <button onClick={closeFintechModal} className="modal-close">✕</button>
+            </div>
+            <form onSubmit={editingFintech ? updateFintech : createFintech} className="modal-body">
+              <div className="modal-form-group">
+                <label>Nome da Fintech:</label>
+                <input
+                  type="text"
+                  value={fintechForm.nome}
+                  onChange={(e) => setFintechForm({ ...fintechForm, nome: e.target.value })}
+                  placeholder="Ex: Nubank, Inter, PicPay..."
+                  autoFocus
+                  required
+                />
+              </div>
+              <div className="modal-form-group">
+                <label>Cor (opcional):</label>
+                <div className="color-palette-container">
+                  <div className="color-palette">
+                    {[
+                      '#8B5CF6', '#EC4899', '#EF4444', '#F59E0B', '#10B981',
+                      '#3B82F6', '#6366F1', '#14B8A6', '#F97316', '#84CC16',
+                      '#06B6D4', '#A855F7', '#E11D48', '#DC2626', '#059669',
+                      '#2563EB', '#7C3AED', '#0891B2', '#BE185D', '#B91C1C',
+                      '#1E40AF', '#5B21B6', '#0D9488', '#C2410C', '#166534',
+                      '#666666', '#9CA3AF', '#374151', '#111827', '#FFFFFF'
+                    ].map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`color-option ${fintechForm.cor === color ? 'selected' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setFintechForm({ ...fintechForm, cor: color })}
+                        title={color}
+                      >
+                        {fintechForm.cor === color && <span className="check-icon">✓</span>}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="color-picker-group">
+                    <input
+                      type="color"
+                      value={fintechForm.cor}
+                      onChange={(e) => setFintechForm({ ...fintechForm, cor: e.target.value })}
+                      className="color-picker"
+                      title="Cor personalizada"
+                    />
+                    <input
+                      type="text"
+                      value={fintechForm.cor}
+                      onChange={(e) => setFintechForm({ ...fintechForm, cor: e.target.value })}
+                      placeholder="#666666"
+                      className="color-input"
+                      maxLength="7"
+                    />
+                  </div>
+                </div>
+                <small className="form-hint">Selecione uma cor da paleta ou escolha uma cor personalizada</small>
+              </div>
+              <div className="modal-footer">
+                <button type="button" onClick={closeFintechModal} className="cancel-button">
+                  Cancelar
+                </button>
+                <button type="submit" className="save-button">
+                  {editingFintech ? '✓ Salvar Alterações' : '✓ Criar Fintech'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Criar Afiliado */}
       {showAfiliadoModal && (
@@ -965,13 +1680,28 @@ function AdminDashboard() {
                       <div className="form-mini-header">
                         <h4>{form.nome}</h4>
                         <span className={`status-badge ${form.status}`}>
-                          {form.status === 'pendente' ? 'Pendente' : 'Concluído'}
+                          {form.status === 'pendente' ? 'Pendente' : form.status === 'concluido' ? 'Concluído' : 'Já Cadastrado'}
                         </span>
                       </div>
                       <div className="form-mini-details">
-                        <p><strong>E-mail:</strong> {form.email}</p>
-                        <p><strong>CPF:</strong> {form.cpf}</p>
-                        <p><strong>Telefone:</strong> {form.telefone}</p>
+                        <p>
+                          <strong>E-mail:</strong>{' '}
+                          <span className={isOriginal(form, 'email') ? 'field-original' : isDuplicate(form, 'email') ? 'field-duplicate' : ''}>
+                            {form.email}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>CPF:</strong>{' '}
+                          <span className={isOriginal(form, 'cpf') ? 'field-original' : isDuplicate(form, 'cpf') ? 'field-duplicate' : ''}>
+                            {form.cpf}
+                          </span>
+                        </p>
+                        <p>
+                          <strong>Telefone:</strong>{' '}
+                          <span className={isOriginal(form, 'telefone') ? 'field-original' : isDuplicate(form, 'telefone') ? 'field-duplicate' : ''}>
+                            {form.telefone}
+                          </span>
+                        </p>
                         <p><strong>Data:</strong> {formatDate(form.createdAt)}</p>
                       </div>
                     </div>
@@ -1065,6 +1795,7 @@ function AdminDashboard() {
                   </div>
 
                   <div className="modal-form-group">
+<<<<<<< HEAD
                     <label>Observações (Max 100):</label>
                     <textarea
                       value={formData.obs || ''}
@@ -1073,6 +1804,50 @@ function AdminDashboard() {
                       maxLength="100"
                       rows="3"
                     />
+=======
+                    <label>Fintechs (opcional):</label>
+                    <div className="modal-fintech-checkboxes">
+                      {fintechs.filter(f => f.ativo).map(fintech => {
+                        const isSelected = formData.fintechIds && formData.fintechIds.includes(String(fintech._id));
+                        const fintechColor = fintech.cor ? fintech.cor.trim() : '#666666';
+                        return (
+                          <label
+                            key={fintech._id}
+                            className={`modal-fintech-checkbox-item ${isSelected ? 'selected' : ''}`}
+                            style={{ 
+                              backgroundColor: isSelected ? `${fintechColor}30` : `${fintechColor}15`,
+                              borderColor: fintechColor
+                            }}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              const currentIds = formData.fintechIds || [];
+                              if (isSelected) {
+                                setFormData({
+                                  ...formData,
+                                  fintechIds: currentIds.filter(id => id !== String(fintech._id))
+                                });
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  fintechIds: [...currentIds, String(fintech._id)]
+                                });
+                              }
+                            }}
+                          >
+                            <span className="modal-fintech-checkbox-name">{fintech.nome}</span>
+                            <div className="modal-fintech-checkbox-circle-wrapper">
+                              <div
+                                className={`modal-fintech-checkbox-circle ${isSelected ? 'checked' : ''}`}
+                                style={{ backgroundColor: fintechColor }}
+                              >
+                                {isSelected && <span className="check-mark">✓</span>}
+                              </div>
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+>>>>>>> 11a1bf4b8a562570db8ad7a4011444f2bf7f2b05
                   </div>
 
                   <button onClick={handleSaveForm} className="modal-save-button">
@@ -1109,6 +1884,42 @@ function AdminDashboard() {
                   </button>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Exportação */}
+      {showExportModal && (
+        <div className="modal-overlay" onClick={() => setShowExportModal(false)}>
+          <div className="modal-content export-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📥 Exportar Formulários</h2>
+              <button onClick={() => setShowExportModal(false)} className="modal-close">✕</button>
+            </div>
+            <div className="modal-body">
+              <p className="export-info">
+                {filteredFormularios.length > 0 
+                  ? `Exportar ${filteredFormularios.length} formulário(s) (com filtros aplicados)`
+                  : `Exportar ${formularios.length} formulário(s) (todos)`
+                }
+              </p>
+              <div className="export-options">
+                <button onClick={exportToCSV} className="export-option-button csv-button">
+                  <span className="export-icon">📊</span>
+                  <div>
+                    <strong>Exportar como CSV</strong>
+                    <p>Formato compatível com Excel</p>
+                  </div>
+                </button>
+                <button onClick={exportToJSON} className="export-option-button json-button">
+                  <span className="export-icon">📄</span>
+                  <div>
+                    <strong>Exportar como JSON</strong>
+                    <p>Formato estruturado para desenvolvimento</p>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         </div>

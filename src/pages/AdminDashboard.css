@@ -159,6 +159,23 @@
   box-shadow: 0 5px 15px rgba(102, 102, 102, 0.5);
 }
 
+.export-button {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+  border: 2px solid #4a90e2;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.export-button:hover {
+  box-shadow: 0 5px 15px rgba(74, 144, 226, 0.5);
+  background: linear-gradient(135deg, #5a9ff2 0%, #458acd 100%);
+}
+
 /* Filtros */
 .filters-section {
   display: flex;
@@ -257,9 +274,46 @@
   background: rgba(220, 53, 69, 0.3);
 }
 
-.duplicates-filter {
+.duplicates-filter,
+.status-filter,
+.fintech-filter {
   display: flex;
   align-items: center;
+  gap: 10px;
+}
+
+.status-filter label,
+.fintech-filter label {
+  color: #ccc;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: 10px 15px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 2px solid #333333;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 150px;
+}
+
+.filter-select:hover {
+  border-color: #666666;
+}
+
+.filter-select:focus {
+  border-color: #666666;
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+  outline: none;
+}
+
+.filter-select option {
+  background: #1a1a1a;
+  color: #fff;
 }
 
 .duplicates-checkbox {
@@ -291,6 +345,17 @@
   font-size: 0.95rem;
   white-space: nowrap;
   user-select: none;
+}
+
+/* Estilos para campos duplicados e originais */
+.field-original {
+  color: #66b3ff !important;
+  font-weight: 500;
+}
+
+.field-duplicate {
+  color: #ffeb3b !important;
+  font-weight: 500;
 }
 
 .results-info {
@@ -349,6 +414,12 @@
   background: rgba(40, 167, 69, 0.2);
   border: 1px solid #28a745;
   color: #5cb85c;
+}
+
+.status-badge.jaCadastrado {
+  background: rgba(108, 117, 125, 0.2);
+  border: 1px solid #6c757d;
+  color: #adb5bd;
 }
 
 .empty-state {
@@ -474,6 +545,16 @@
 
 .action-button.pendente:hover {
   background: rgba(255, 193, 7, 0.3);
+}
+
+.action-button.jaCadastrado {
+  background: rgba(108, 117, 125, 0.2);
+  border-color: #6c757d;
+  color: #adb5bd;
+}
+
+.action-button.jaCadastrado:hover {
+  background: rgba(108, 117, 125, 0.3);
 }
 
 .action-button.delete {
@@ -1387,6 +1468,73 @@
   color: #888;
 }
 
+/* Modal de Exportação */
+.export-modal {
+  max-width: 500px;
+}
+
+.export-info {
+  color: #ccc;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 1rem;
+}
+
+.export-options {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.export-option-button {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 20px;
+  background: rgba(26, 26, 26, 0.6);
+  border: 2px solid #333333;
+  border-radius: 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+}
+
+.export-option-button:hover {
+  border-color: #666666;
+  background: rgba(40, 40, 40, 0.8);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(102, 102, 102, 0.3);
+}
+
+.export-option-button .export-icon {
+  font-size: 2.5rem;
+  flex-shrink: 0;
+}
+
+.export-option-button strong {
+  display: block;
+  font-size: 1.1rem;
+  margin-bottom: 5px;
+  color: #fff;
+}
+
+.export-option-button p {
+  margin: 0;
+  color: #aaa;
+  font-size: 0.9rem;
+}
+
+.csv-button:hover {
+  border-color: #4a90e2;
+  background: rgba(74, 144, 226, 0.1);
+}
+
+.json-button:hover {
+  border-color: #28a745;
+  background: rgba(40, 167, 69, 0.1);
+}
+
 @media (max-width: 768px) {
   .modal-content {
     max-width: 100%;
@@ -1457,6 +1605,574 @@
   .cancel-button,
   .save-button {
     width: 100%;
+  }
+
+  .export-button {
+    width: 100%;
+    margin-top: 10px;
+  }
+
+  .export-option-button {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+
+  .export-option-button .export-icon {
+    font-size: 2rem;
+  }
+
+  .status-filter,
+  .fintech-filter {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+  }
+}
+
+/* Fintech Badge */
+.fintech-badge {
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Fintech Checkboxes */
+.fintech-checkboxes-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.fintech-checkboxes-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: 100%;
+}
+
+.fintech-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 2px 6px;
+  border: 2px solid;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 110px;
+  flex: 1;
+  max-width: 170px;
+}
+
+.fintech-checkbox-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 102, 102, 0.2);
+  opacity: 0.9;
+}
+
+.fintech-checkbox-item.selected {
+  box-shadow: 0 0 15px rgba(102, 102, 102, 0.3);
+}
+
+.fintech-checkbox-name {
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.fintech-checkbox-circle-wrapper {
+  flex-shrink: 0;
+}
+
+.fintech-checkbox-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.fintech-checkbox-item:hover .fintech-checkbox-circle {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.fintech-checkbox-circle.checked {
+  border-color: #fff;
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.5);
+}
+
+.fintech-checkbox-circle .check-mark {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.no-fintechs-message {
+  color: #888;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+/* Modal Fintech Checkboxes */
+.modal-fintech-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 4px;
+  background: rgba(26, 26, 26, 0.4);
+  border: 2px solid #333333;
+  border-radius: 10px;
+}
+
+.modal-fintech-checkbox-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px 8px;
+  border: 2px solid;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.modal-fintech-checkbox-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(102, 102, 102, 0.2);
+  opacity: 0.9;
+}
+
+.modal-fintech-checkbox-item.selected {
+  box-shadow: 0 0 15px rgba(102, 102, 102, 0.3);
+}
+
+.modal-fintech-checkbox-name {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.modal-fintech-checkbox-circle-wrapper {
+  flex-shrink: 0;
+}
+
+.modal-fintech-checkbox-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #333333;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+}
+
+.modal-fintech-checkbox-item:hover .modal-fintech-checkbox-circle {
+  transform: scale(1.15);
+  box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+}
+
+.modal-fintech-checkbox-circle.checked {
+  border-color: #fff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.6);
+}
+
+.modal-fintech-checkbox-circle .check-mark {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+/* Configurações */
+.configuracoes-section {
+  padding: 20px 0;
+}
+
+.config-section {
+  margin-bottom: 40px;
+}
+
+.config-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.config-section-header h3 {
+  color: #fff;
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+/* Formulário de Configurações */
+.config-form {
+  background: rgba(10, 10, 10, 0.8);
+  border: 2px solid #333333;
+  border-radius: 15px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.config-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.config-form-group label {
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.config-input,
+.config-textarea {
+  padding: 12px 15px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 2px solid #333333;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  font-family: inherit;
+  transition: all 0.3s ease;
+}
+
+.config-input:focus,
+.config-textarea:focus {
+  border-color: #666666;
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+  outline: none;
+}
+
+.config-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.config-save-button {
+  padding: 12px 25px;
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  border: 2px solid #28a745;
+  border-radius: 10px;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  align-self: flex-start;
+}
+
+.config-save-button:hover {
+  box-shadow: 0 5px 15px rgba(40, 167, 69, 0.5);
+  transform: translateY(-2px);
+}
+
+/* Fintechs Grid */
+.fintechs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 20px;
+}
+
+.fintech-card {
+  background: rgba(10, 10, 10, 0.8);
+  border: 2px solid #333333;
+  border-radius: 15px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.fintech-card:hover {
+  border-color: #666666;
+  box-shadow: 0 5px 20px rgba(102, 102, 102, 0.2);
+  transform: translateY(-2px);
+}
+
+.fintech-header {
+  margin-bottom: 15px;
+}
+
+.fintech-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.fintech-color-indicator {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 2px solid #333333;
+  flex-shrink: 0;
+}
+
+.fintech-info h3 {
+  color: #fff;
+  margin: 0 0 5px 0;
+  font-size: 1.2rem;
+}
+
+.fintech-status {
+  margin: 0;
+}
+
+.status-active {
+  color: #5cb85c;
+  font-weight: 600;
+}
+
+.status-inactive {
+  color: #dc3545;
+  font-weight: 600;
+}
+
+.fintech-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggle-status-button,
+.edit-fintech-button,
+.delete-fintech-button {
+  padding: 8px 15px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+}
+
+.toggle-status-button {
+  background: rgba(40, 167, 69, 0.2);
+  border-color: #28a745;
+  color: #5cb85c;
+}
+
+.toggle-status-button.inactive {
+  background: rgba(220, 53, 69, 0.2);
+  border-color: #dc3545;
+  color: #ff6b6b;
+}
+
+.toggle-status-button:hover {
+  background: rgba(40, 167, 69, 0.3);
+}
+
+.toggle-status-button.inactive:hover {
+  background: rgba(220, 53, 69, 0.3);
+}
+
+.edit-fintech-button {
+  background: rgba(102, 102, 102, 0.2);
+  border-color: #666666;
+  color: #ccc;
+}
+
+.edit-fintech-button:hover {
+  background: rgba(102, 102, 102, 0.3);
+}
+
+.delete-fintech-button {
+  background: rgba(220, 53, 69, 0.2);
+  border-color: #dc3545;
+  color: #ff6b6b;
+}
+
+.delete-fintech-button:hover {
+  background: rgba(220, 53, 69, 0.3);
+}
+
+/* Modal de Fintech */
+.fintech-modal {
+  max-width: 500px;
+}
+
+.color-palette-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.color-palette {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 8px;
+  padding: 15px;
+  background: rgba(26, 26, 26, 0.4);
+  border: 2px solid #333333;
+  border-radius: 12px;
+}
+
+.color-option {
+  width: 100%;
+  aspect-ratio: 1;
+  border: 3px solid transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 35px;
+  min-height: 35px;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+  z-index: 1;
+}
+
+.color-option.selected {
+  border-color: #fff;
+  box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+  transform: scale(1.15);
+}
+
+.color-option.selected .check-icon {
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: bold;
+  text-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+.check-icon {
+  position: absolute;
+  pointer-events: none;
+}
+
+.color-picker-group {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.color-picker {
+  width: 60px;
+  height: 40px;
+  border: 2px solid #333333;
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+  transition: all 0.3s ease;
+}
+
+.color-picker:hover {
+  border-color: #666666;
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+}
+
+.color-input {
+  flex: 1;
+  padding: 10px 15px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 2px solid #333333;
+  border-radius: 8px;
+  color: #fff;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+}
+
+.color-input:focus {
+  border-color: #666666;
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+  outline: none;
+}
+
+.form-hint {
+  color: #888;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  display: block;
+}
+
+.form-select {
+  width: 100%;
+  padding: 12px 15px;
+  background: rgba(26, 26, 26, 0.8);
+  border: 2px solid #333333;
+  border-radius: 10px;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.form-select:hover {
+  border-color: #666666;
+}
+
+.form-select:focus {
+  border-color: #666666;
+  box-shadow: 0 0 10px rgba(102, 102, 102, 0.3);
+  outline: none;
+}
+
+.form-select option {
+  background: #1a1a1a;
+  color: #fff;
+}
+
+@media (max-width: 768px) {
+  .fintechs-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fintech-actions {
+    flex-direction: column;
+  }
+
+  .toggle-status-button,
+  .edit-fintech-button,
+  .delete-fintech-button {
+    width: 100%;
+  }
+
+  .color-palette {
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+    padding: 12px;
+  }
+
+  .color-option {
+    min-width: 30px;
+    min-height: 30px;
+  }
+
+  .fintech-checkboxes-container {
+    flex-direction: column;
+  }
+
+  .fintech-checkbox-item {
+    max-width: 100%;
+  }
+
+  .modal-fintech-checkboxes {
+    max-height: 200px;
   }
 }
 
