@@ -198,7 +198,7 @@ function AdminDashboard() {
       );
 
       await axios.put(`${API_URL}/formulario/${formId}`, updateData, getAuthHeaders());
-      
+
       const fintech = fintechs.find(ft => String(ft._id) === fintechIdStr);
       const action = isSelected ? 'removida' : 'adicionada';
       showMessage('success', `Fintech ${fintech?.nome || ''} ${action} com sucesso!`);
@@ -425,15 +425,9 @@ function AdminDashboard() {
       email: form.email,
       cpf: form.cpf,
       telefone: form.telefone,
-<<<<<<< HEAD
-      cpf: form.cpf,
-      telefone: form.telefone,
       senha: form.senha,
-      obs: form.obs || ''
-=======
-      senha: form.senha,
+      obs: form.obs || '',
       fintechIds: fintechIds
->>>>>>> 11a1bf4b8a562570db8ad7a4011444f2bf7f2b05
     });
     setShowFormModal(true);
   };
@@ -690,7 +684,7 @@ function AdminDashboard() {
 
   const createFintech = async (e) => {
     e.preventDefault();
-    
+
     if (!fintechForm.nome.trim()) {
       showMessage('error', 'Digite o nome da fintech');
       return;
@@ -708,7 +702,7 @@ function AdminDashboard() {
 
   const updateFintech = async (e) => {
     e.preventDefault();
-    
+
     if (!fintechForm.nome.trim()) {
       showMessage('error', 'Digite o nome da fintech');
       return;
@@ -754,7 +748,7 @@ function AdminDashboard() {
   // Função para atualizar configurações
   const updateConfig = async (e) => {
     e.preventDefault();
-    
+
     if (!configForm.tituloPrincipal.trim() || !configForm.subtitulo.trim() || !configForm.descricao.trim()) {
       showMessage('error', 'Preencha todos os campos');
       return;
@@ -772,7 +766,7 @@ function AdminDashboard() {
   // Funções de exportação
   const exportToCSV = () => {
     const dataToExport = filteredFormularios.length > 0 ? filteredFormularios : formularios;
-    
+
     if (dataToExport.length === 0) {
       showMessage('error', 'Não há formulários para exportar');
       return;
@@ -780,7 +774,7 @@ function AdminDashboard() {
 
     // Cabeçalhos do CSV
     const headers = ['Nome', 'E-mail', 'CPF', 'Telefone', 'Senha', 'Status', 'Data de Criação', 'Afiliado', 'Fintechs'];
-    
+
     // Criar linhas do CSV
     const rows = dataToExport.map(form => {
       const date = new Date(form.createdAt).toLocaleString('pt-BR');
@@ -795,7 +789,7 @@ function AdminDashboard() {
         const fintech = getFintechNome(id);
         return fintech ? fintech.nome : '';
       }).filter(n => n).join('; ') || 'N/A';
-      
+
       // Escapar vírgulas e aspas nos valores
       const escapeCSV = (value) => {
         if (value === null || value === undefined) return '';
@@ -821,27 +815,27 @@ function AdminDashboard() {
 
     // Combinar cabeçalhos e linhas
     const csvContent = [headers.join(','), ...rows].join('\n');
-    
+
     // Adicionar BOM para Excel reconhecer UTF-8
     const BOM = '\uFEFF';
     const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     showMessage('success', 'Formulários exportados em CSV com sucesso!');
     setShowExportModal(false);
   };
 
   const exportToJSON = () => {
     const dataToExport = filteredFormularios.length > 0 ? filteredFormularios : formularios;
-    
+
     if (dataToExport.length === 0) {
       showMessage('error', 'Não há formulários para exportar');
       return;
@@ -860,7 +854,7 @@ function AdminDashboard() {
         const fintech = getFintechNome(id);
         return fintech ? { nome: fintech.nome, cor: fintech.cor } : null;
       }).filter(f => f);
-      
+
       return {
         nome: form.nome,
         email: form.email,
@@ -881,14 +875,14 @@ function AdminDashboard() {
     const blob = new Blob([jsonContent], { type: 'application/json;charset=utf-8;' });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
-    
+
     link.setAttribute('href', url);
     link.setAttribute('download', `formularios_${new Date().toISOString().split('T')[0]}.json`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    
+
     showMessage('success', 'Formulários exportados em JSON com sucesso!');
     setShowExportModal(false);
   };
@@ -912,7 +906,7 @@ function AdminDashboard() {
 
     // Filtro de fintech
     const formFintechIds = form.fintechIds || [];
-    const matchesFintech = filterFintech === 'todos' || 
+    const matchesFintech = filterFintech === 'todos' ||
       (filterFintech === 'sem-fintech' && (!formFintechIds || formFintechIds.length === 0)) ||
       (formFintechIds.length > 0 && formFintechIds.some(id => {
         const fintechId = typeof id === 'object' ? id._id : id;
@@ -1161,7 +1155,7 @@ function AdminDashboard() {
                                 <label
                                   key={fintech._id}
                                   className={`fintech-checkbox-item ${isSelected ? 'selected' : ''}`}
-                                  style={{ 
+                                  style={{
                                     backgroundColor: isSelected ? `${fintechColor}30` : `${fintechColor}15`,
                                     borderColor: fintechColor
                                   }}
@@ -1431,7 +1425,7 @@ function AdminDashboard() {
               <div className="config-section-header">
                 <h3>📝 Títulos do Formulário</h3>
               </div>
-              
+
               <form onSubmit={updateConfig} className="config-form">
                 <div className="config-form-group">
                   <label htmlFor="tituloPrincipal">Título Principal:</label>
@@ -1497,8 +1491,8 @@ function AdminDashboard() {
                     <div key={fintech._id} className="fintech-card">
                       <div className="fintech-header">
                         <div className="fintech-info">
-                          <div 
-                            className="fintech-color-indicator" 
+                          <div
+                            className="fintech-color-indicator"
                             style={{ backgroundColor: fintech.cor ? fintech.cor.trim() : '#666666' }}
                           ></div>
                           <div>
@@ -1795,7 +1789,6 @@ function AdminDashboard() {
                   </div>
 
                   <div className="modal-form-group">
-<<<<<<< HEAD
                     <label>Observações (Max 100):</label>
                     <textarea
                       value={formData.obs || ''}
@@ -1804,7 +1797,9 @@ function AdminDashboard() {
                       maxLength="100"
                       rows="3"
                     />
-=======
+                  </div>
+
+                  <div className="modal-form-group">
                     <label>Fintechs (opcional):</label>
                     <div className="modal-fintech-checkboxes">
                       {fintechs.filter(f => f.ativo).map(fintech => {
@@ -1814,7 +1809,7 @@ function AdminDashboard() {
                           <label
                             key={fintech._id}
                             className={`modal-fintech-checkbox-item ${isSelected ? 'selected' : ''}`}
-                            style={{ 
+                            style={{
                               backgroundColor: isSelected ? `${fintechColor}30` : `${fintechColor}15`,
                               borderColor: fintechColor
                             }}
@@ -1847,7 +1842,6 @@ function AdminDashboard() {
                         );
                       })}
                     </div>
->>>>>>> 11a1bf4b8a562570db8ad7a4011444f2bf7f2b05
                   </div>
 
                   <button onClick={handleSaveForm} className="modal-save-button">
@@ -1899,7 +1893,7 @@ function AdminDashboard() {
             </div>
             <div className="modal-body">
               <p className="export-info">
-                {filteredFormularios.length > 0 
+                {filteredFormularios.length > 0
                   ? `Exportar ${filteredFormularios.length} formulário(s) (com filtros aplicados)`
                   : `Exportar ${formularios.length} formulário(s) (todos)`
                 }
