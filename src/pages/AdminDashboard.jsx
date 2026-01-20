@@ -895,7 +895,8 @@ function AdminDashboard() {
       form.nome.toLowerCase().includes(searchLower) ||
       form.email.toLowerCase().includes(searchLower) ||
       form.cpf.includes(searchTerm) ||
-      form.telefone.includes(searchTerm);
+      form.telefone.includes(searchTerm) ||
+      (form.obs && form.obs.toLowerCase().includes(searchLower));
 
     // Filtro de data
     const formDate = new Date(form.createdAt).toISOString().split('T')[0];
